@@ -1,5 +1,6 @@
 require "rspec"
 require "rspec/its"
+require "rspec/collection_matchers"
 require "pry"
 
 if ENV["SIMPLECOV"]

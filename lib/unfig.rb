@@ -3,3 +3,4 @@ module Unfig
 end
 
 require_relative "unfig/version"
+require_relative "unfig/param_config"
