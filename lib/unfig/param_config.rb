@@ -24,6 +24,8 @@ module Unfig
 
     # Optional entries
 
+    def multi? = data.fetch(:multi, false).tap { |m| validate_multi!(m) }
+
     def long
       if long_supplied?
         data.fetch(:long, nil).tap { |l| validate_long!(l) }
@@ -89,6 +91,12 @@ module Unfig
         raise(Invalid, "Default for #{name} is not an integer") unless d.nil? || d.is_a?(Integer)
       when :float
         raise(Invalid, "Default for #{name} is not a float") unless d.nil? || d.is_a?(Numeric)
+      end
+    end
+
+    def validate_multi!(m)
+      unless [false, true].include?(m)
+        raise Invalid, "Param #{name} may not take a non-boolean for 'multi'"
       end
     end
 

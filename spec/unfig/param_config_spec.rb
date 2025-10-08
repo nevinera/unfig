@@ -7,6 +7,7 @@ RSpec.describe Unfig::ParamConfig do
       "description" => "Foo is for foo",
       "type" => "boolean",
       "default" => true,
+      "multi" => false,
       "env" => "FOO",
       "long" => "foo",
       "short" => "f"
@@ -18,7 +19,7 @@ RSpec.describe Unfig::ParamConfig do
     subject(:loaded) { described_class.load(params_data) }
 
     let(:params_data) { {"foo" => foo_data, "bar" => bar_data} }
-    let(:foo_data) { {description: "My Foo", type: "boolean", default: false, env: "FOO"} }
+    let(:foo_data) { {description: "My Foo", type: "boolean", default: false, env: "FOO", multi: true} }
     let(:bar_data) { {description: "My Bar", type: "integer", default: nil, short: "a", long: "bar-bar"} }
 
     it { is_expected.to have_exactly(2).items }
@@ -32,6 +33,7 @@ RSpec.describe Unfig::ParamConfig do
       expect(foo).to have_attributes(
         type: :boolean,
         default: false,
+        multi?: true,
         long_supplied?: false,
         long: "foo",
         short_supplied?: false,
@@ -44,6 +46,7 @@ RSpec.describe Unfig::ParamConfig do
       expect(bar).to have_attributes(
         type: :integer,
         default: nil,
+        multi?: false,
         long_supplied?: true,
         long: "bar-bar",
         short_supplied?: true,
@@ -202,6 +205,33 @@ RSpec.describe Unfig::ParamConfig do
       it_accepts "an integer", 1024, 1024, "the integer"
       it_raises "a boolean", true, /not a float/
       it_raises "a string", "foo", /not a float/
+    end
+  end
+
+  describe "#multi?" do
+    subject(:multi?) { pc.multi? }
+
+    context "when :multi is not supplied" do
+      let(:data) { base.except(:multi) }
+      it { is_expected.to be_falsey }
+    end
+
+    context "when :multi is supplied as true" do
+      let(:data) { base.merge("multi" => true) }
+      it { is_expected.to be_truthy }
+    end
+
+    context "when :multi is supplied as false" do
+      let(:data) { base.merge("multi" => false) }
+      it { is_expected.to be_falsey }
+    end
+
+    context "when :multi is supplied as 5" do
+      let(:data) { base.merge("multi" => 5) }
+
+      it "raises Invalid" do
+        expect { multi }.to raise_error(described_class::Invalid, /foo may not take a non-bool/i)
+      end
     end
   end
 
