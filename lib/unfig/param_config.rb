@@ -21,13 +21,17 @@ module Unfig
 
     # Optional entries
 
-    def long = Array(data.fetch(:long, [])).tap { |s| validate_longs!(s) }
+    def long = data.fetch(:long, nil).tap { |l| validate_long!(l) }
 
     def long_supplied? = data.key?(:long)
 
-    def short = Array(data.fetch(:short, [])).tap { |s| validate_shorts!(s) }
+    def short = data.fetch(:short, nil).tap { |s| validate_short!(s) }
 
     def short_supplied? = data.key?(:short)
+
+    def env = data.fetch(:env, nil).tap { |e| validate_env!(e) }
+
+    def env_supplied? = data.key?(:env)
 
     private
 
@@ -61,29 +65,35 @@ module Unfig
       end
     end
 
-    def validate_longs!(s)
-      raise(Invalid, "Long flags supplied for #{name} are an empty array") if long_supplied? && s.empty?
-      s.each { |elem| validate_long!(elem) }
-    end
+    def validate_long!(l)
+      return if l.nil?
 
-    def validate_long!(s)
-      if !s.is_a?(String)
+      if !l.is_a?(String)
         raise Invalid, "Long flag supplied for #{name} is not a string"
-      elsif /\s/.match?(s)
+      elsif /\s/.match?(l)
         raise Invalid, "Long flag supplied for #{name} includes whitespace"
       end
     end
 
-    def validate_shorts!(s)
-      raise(Invalid, "Short flags supplied for #{name} are an empty array") if short_supplied? && s.empty?
-      s.each { |elem| validate_short!(elem) }
-    end
-
     def validate_short!(s)
+      return if s.nil?
+
       if !s.is_a?(String)
         raise Invalid, "Short flag supplied for #{name} is not a string"
       elsif !/\A[a-zA-Z0-9]\z/.match?(s)
         raise Invalid, "Short flag supplied for #{name} must be a single letter or digit"
+      end
+    end
+
+    def validate_env!(e)
+      return if e.nil?
+
+      if !e.is_a?(String)
+        raise Invalid, "ENV name supplied for #{name} is not a string"
+      elsif !/\A[a-zA-Z0-9_]+\z/.match?(e)
+        raise Invalid, "ENV name for #{name} may only contain alphanumerics and underscores"
+      elsif !/\A[a-zA-Z]/.match?(e)
+        raise Invalid, "ENV name for #{name} must begin with a letter"
       end
     end
   end

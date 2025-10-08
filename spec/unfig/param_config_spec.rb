@@ -7,6 +7,7 @@ RSpec.describe Unfig::ParamConfig do
       "description" => "Foo is for foo",
       "type" => "boolean",
       "default" => true,
+      "env" => "FOO",
       "long" => "foo",
       "short" => "f"
     }
@@ -17,8 +18,8 @@ RSpec.describe Unfig::ParamConfig do
     subject(:loaded) { described_class.load(params_data) }
 
     let(:params_data) { {"foo" => foo_data, "bar" => bar_data} }
-    let(:foo_data) { {description: "My Foo", type: "boolean", default: false} }
-    let(:bar_data) { {description: "My Bar", type: "integer", default: nil, short: ["a", "b"], long: "bar-bar"} }
+    let(:foo_data) { {description: "My Foo", type: "boolean", default: false, env: "FOO"} }
+    let(:bar_data) { {description: "My Bar", type: "integer", default: nil, short: "a", long: "bar-bar"} }
 
     it { is_expected.to have_exactly(2).items }
 
@@ -32,9 +33,11 @@ RSpec.describe Unfig::ParamConfig do
         type: :boolean,
         default: false,
         long_supplied?: false,
-        long: [],
+        long: nil,
         short_supplied?: false,
-        short: []
+        short: nil,
+        env_supplied?: true,
+        env: "FOO"
       )
 
       bar = loaded.detect { |c| c.name == "bar" }
@@ -42,9 +45,11 @@ RSpec.describe Unfig::ParamConfig do
         type: :integer,
         default: nil,
         long_supplied?: true,
-        long: ["bar-bar"],
+        long: "bar-bar",
         short_supplied?: true,
-        short: ["a", "b"]
+        short: "a",
+        env_supplied?: false,
+        env: nil
       )
     end
   end
@@ -208,11 +213,19 @@ RSpec.describe Unfig::ParamConfig do
 
     context "when not supplied" do
       let(:data) { base.except("long") }
-      it { is_expected.to eq([]) }
+      it { is_expected.to be_nil }
     end
 
-    context "when supplied as a non-string" do
+    context "when supplied as a number" do
       let(:data) { base.merge("long" => 55) }
+
+      it "raises Invalid" do
+        expect { long }.to raise_error(described_class::Invalid, /for foo is not a string/i)
+      end
+    end
+
+    context "when supplied as an array" do
+      let(:data) { base.merge("long" => ["foo", "bar"]) }
 
       it "raises Invalid" do
         expect { long }.to raise_error(described_class::Invalid, /for foo is not a string/i)
@@ -221,33 +234,12 @@ RSpec.describe Unfig::ParamConfig do
 
     context "when supplied as a string" do
       let(:data) { base.merge("long" => "a-string") }
-      it { is_expected.to contain_exactly("a-string") }
+      it { is_expected.to eq("a-string") }
 
       context "which includes whitespace" do
         let(:data) { base.merge("long" => "a string") }
 
         it "raises invalid" do
-          expect { long }.to raise_error(described_class::Invalid, /for foo includes whitespace/i)
-        end
-      end
-    end
-
-    context "when supplied as an array of strings" do
-      let(:data) { base.merge("long" => ["foo", "bar"]) }
-      it { is_expected.to contain_exactly("foo", "bar") }
-
-      context "but it is an empty array" do
-        let(:data) { base.merge("long" => []) }
-
-        it "raises Invalid" do
-          expect { long }.to raise_error(described_class::Invalid, /for foo are an empty array/i)
-        end
-      end
-
-      context "but one includes whitespace" do
-        let(:data) { base.merge("long" => ["foo", "bar baz"]) }
-
-        it "raises Invalid" do
           expect { long }.to raise_error(described_class::Invalid, /for foo includes whitespace/i)
         end
       end
@@ -278,11 +270,19 @@ RSpec.describe Unfig::ParamConfig do
 
     context "when not supplied" do
       let(:data) { base.except("short") }
-      it { is_expected.to eq([]) }
+      it { is_expected.to be_nil }
     end
 
-    context "when supplied as a non-string" do
+    context "when supplied as a number" do
       let(:data) { base.merge("short" => 5) }
+
+      it "raises Invalid" do
+        expect { short }.to raise_error(described_class::Invalid, /for foo is not a string/i)
+      end
+    end
+
+    context "when supplied as an array" do
+      let(:data) { base.merge("short" => ["X", "v"]) }
 
       it "raises Invalid" do
         expect { short }.to raise_error(described_class::Invalid, /for foo is not a string/i)
@@ -291,7 +291,7 @@ RSpec.describe Unfig::ParamConfig do
 
     context "when supplied as a string" do
       let(:data) { base.merge("short" => "a") }
-      it { is_expected.to contain_exactly("a") }
+      it { is_expected.to eq("a") }
 
       context "which is not a single character" do
         let(:data) { base.merge("short" => "foo") }
@@ -300,41 +300,77 @@ RSpec.describe Unfig::ParamConfig do
           expect { short }.to raise_error(described_class::Invalid, /for foo must be/i)
         end
       end
+
+      context "which contains a not-allowed value" do
+        let(:data) { base.merge("short" => "?") }
+
+        it "raises Invalid" do
+          expect { short }.to raise_error(described_class::Invalid, /for foo must be/i)
+        end
+      end
+    end
+  end
+
+  describe "#env_supplied?" do
+    subject(:env_supplied?) { pc.env_supplied? }
+
+    context "when it is supplied" do
+      let(:data) { base.merge("env" => "foo") }
+      it { is_expected.to be_truthy }
     end
 
-    context "when supplied as an array of strings" do
-      let(:data) { base.merge("short" => ["X", "v"]) }
-      it { is_expected.to contain_exactly("X", "v") }
+    context "when it is not supplied" do
+      let(:data) { base.except("env") }
+      it { is_expected.to be_falsey }
+    end
 
-      context "but it is an empty array" do
-        let(:data) { base.merge("short" => []) }
+    context "when it supplied as nil" do
+      let(:data) { base.merge("env" => nil) }
+      it { is_expected.to be_truthy }
+    end
+  end
+
+  describe "#env" do
+    subject(:env) { pc.env }
+
+    context "when not supplied" do
+      let(:data) { base.except("env") }
+      it { is_expected.to be_nil }
+    end
+
+    context "when supplied as a number" do
+      let(:data) { base.merge("env" => 5) }
+
+      it "raises Invalid" do
+        expect { env }.to raise_error(described_class::Invalid, /for foo is not a string/i)
+      end
+    end
+
+    context "when supplied as an array" do
+      let(:data) { base.merge("env" => ["X", "v"]) }
+
+      it "raises Invalid" do
+        expect { env }.to raise_error(described_class::Invalid, /for foo is not a string/i)
+      end
+    end
+
+    context "when supplied as a string" do
+      let(:data) { base.merge("env" => "FOO2") }
+      it { is_expected.to eq("FOO2") }
+
+      context "which contains a not-allowed character" do
+        let(:data) { base.merge("env" => "FOO?") }
 
         it "raises Invalid" do
-          expect { short }.to raise_error(described_class::Invalid, /for foo are an empty array/i)
+          expect { env }.to raise_error(described_class::Invalid, /for foo may only contain/i)
         end
       end
 
-      context "but one is too long" do
-        let(:data) { base.merge("short" => ["x", "baz"]) }
+      context "which starts with a non-alphabetic" do
+        let(:data) { base.merge("env" => "2FOO") }
 
         it "raises Invalid" do
-          expect { short }.to raise_error(described_class::Invalid, /for foo must be/i)
-        end
-      end
-
-      context "but one is not in the allowed values" do
-        let(:data) { base.merge("short" => ["x", "?"]) }
-
-        it "raises Invalid" do
-          expect { short }.to raise_error(described_class::Invalid, /for foo must be/i)
-        end
-      end
-
-      context "but one is not a string" do
-        let(:data) { base.merge("short" => ["x", 5.3]) }
-
-        it "raises Invalid" do
-          expect { short }.to raise_error(described_class::Invalid, /for foo is not a string/i)
+          expect { env }.to raise_error(described_class::Invalid, /for foo must begin with a letter/i)
         end
       end
     end
