@@ -33,9 +33,9 @@ RSpec.describe Unfig::ParamConfig do
         type: :boolean,
         default: false,
         long_supplied?: false,
-        long: nil,
+        long: "foo",
         short_supplied?: false,
-        short: nil,
+        short: "f",
         env_supplied?: true,
         env: "FOO"
       )
@@ -49,7 +49,7 @@ RSpec.describe Unfig::ParamConfig do
         short_supplied?: true,
         short: "a",
         env_supplied?: false,
-        env: nil
+        env: "BAR"
       )
     end
   end
@@ -229,7 +229,12 @@ RSpec.describe Unfig::ParamConfig do
 
     context "when not supplied" do
       let(:data) { base.except("long") }
-      it { is_expected.to be_nil }
+      it { is_expected.to eq("foo") }
+
+      context "and the name includes underscores" do
+        let(:supplied_name) { "foo_bar" }
+        it { is_expected.to eq("foo-bar") }
+      end
     end
 
     context "when supplied as a number" do
@@ -286,7 +291,7 @@ RSpec.describe Unfig::ParamConfig do
 
     context "when not supplied" do
       let(:data) { base.except("short") }
-      it { is_expected.to be_nil }
+      it { is_expected.to eq("f") }
     end
 
     context "when supplied as a number" do
@@ -351,7 +356,12 @@ RSpec.describe Unfig::ParamConfig do
 
     context "when not supplied" do
       let(:data) { base.except("env") }
-      it { is_expected.to be_nil }
+      it { is_expected.to eq("FOO") }
+
+      context "and name includes underscores" do
+        let(:supplied_name) { "foo_bar" }
+        it { is_expected.to eq("FOO_BAR") }
+      end
     end
 
     context "when supplied as a number" do

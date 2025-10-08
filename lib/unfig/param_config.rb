@@ -24,15 +24,33 @@ module Unfig
 
     # Optional entries
 
-    def long = data.fetch(:long, nil).tap { |l| validate_long!(l) }
+    def long
+      if long_supplied?
+        data.fetch(:long, nil).tap { |l| validate_long!(l) }
+      else
+        name.tr("_", "-").downcase
+      end
+    end
 
     def long_supplied? = data.key?(:long)
 
-    def short = data.fetch(:short, nil).tap { |s| validate_short!(s) }
+    def short
+      if short_supplied?
+        data.fetch(:short, nil).tap { |s| validate_short!(s) }
+      else
+        name[0]
+      end
+    end
 
     def short_supplied? = data.key?(:short)
 
-    def env = data.fetch(:env, nil).tap { |e| validate_env!(e) }
+    def env
+      if env_supplied?
+        data.fetch(:env, nil).tap { |e| validate_env!(e) }
+      else
+        name.upcase
+      end
+    end
 
     def env_supplied? = data.key?(:env)
 
