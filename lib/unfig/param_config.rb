@@ -2,16 +2,19 @@ module Unfig
   class ParamConfig
     Invalid = Class.new(Unfig::Error)
 
+    KNOWN_TYPES = [:boolean, :string, :integer, :float].to_set.freeze
+    MAX_NAME = 128
+
     def self.load(params_data) = params_data.map { |key, value| new(key, value) }
 
     def initialize(name, data)
-      @name = name.to_s
+      @name = name
       @data = data.transform_keys(&:to_sym)
     end
 
-    attr_reader :name
-
     # Required entries
+
+    def name = @name.to_s.tap { |n| validate_name!(n) }
 
     def description = data.fetch(:description).to_s.tap { |d| validate_description!(d) }
 
@@ -37,13 +40,19 @@ module Unfig
 
     attr_reader :data
 
+    def validate_name!(n)
+      if !/\A[a-zA-Z0-9_]+\z/.match?(n)
+        raise Invalid, "Name '#{n}' may contain only alphanumerics and underscores"
+      elsif n.length > MAX_NAME
+        raise Invalid, "Name '#{n}' contains more than #{MAX_NAME} characters"
+      end
+    end
+
     def validate_description!(d)
       unless /\S/.match?(d)
         raise Invalid, "Description for #{name} must not be blank"
       end
     end
-
-    KNOWN_TYPES = [:boolean, :string, :integer, :float].to_set.freeze
 
     def validate_type!(t)
       unless KNOWN_TYPES.include?(t)

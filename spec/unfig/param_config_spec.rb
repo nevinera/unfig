@@ -62,6 +62,22 @@ RSpec.describe Unfig::ParamConfig do
       let(:supplied_name) { :foo }
       it { is_expected.to eq("foo") }
     end
+
+    context "when name has unexpected characters in it" do
+      let(:supplied_name) { "foo-bar" }
+
+      it "raises Invalid" do
+        expect { name }.to raise_error(described_class::Invalid, /'foo-bar' may contain only/)
+      end
+    end
+
+    context "when name is too long" do
+      let(:supplied_name) { "x" * 129 }
+
+      it "raises Invalid" do
+        expect { name }.to raise_error(described_class::Invalid, /xxxx' contains more than 128 characters/)
+      end
+    end
   end
 
   describe "#description" do
