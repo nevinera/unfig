@@ -2,263 +2,351 @@ RSpec.describe Unfig::ParamConfig do
   subject(:pc) { described_class.new(supplied_name, data) }
 
   let(:supplied_name) { "foo" }
-  let(:base) do
-    {
-      "description" => "Foo is for foo",
-      "type" => "boolean",
-      "default" => true,
-      "multi" => false,
-      "env" => "FOO",
-      "long" => "foo",
-      "short" => "f"
-    }
-  end
-  let(:data) { base }
+  let(:base_data) { {description:, type:, enabled:, default:, multi:, env:, long:, short:} }
+  let(:data) { base_data }
+  let(:description) { "Foo is for foo" }
+  let(:type) { "boolean" }
+  let(:enabled) { ["long", "short", "file"] }
+  let(:default) { true }
+  let(:multi) { false }
+  let(:env) { "FOO_ENV" }
+  let(:long) { "foo-foo" }
+  let(:short) { "o" }
 
-  describe ".load" do
-    subject(:loaded) { described_class.load(params_data) }
+  describe "validations" do
+    subject(:instantiation) { described_class.new(supplied_name, data) }
 
-    let(:params_data) { {"foo" => foo_data, "bar" => bar_data} }
-    let(:foo_data) { {description: "My Foo", type: "boolean", default: false, env: "FOO", multi: true} }
-    let(:bar_data) { {description: "My Bar", type: "integer", default: nil, short: "a", long: "bar-bar"} }
-
-    it { is_expected.to have_exactly(2).items }
-
-    it "produces an array of ParamConfigs" do
-      expect(loaded).to all(be_a(described_class))
-    end
-
-    it "produces the expected configs", :aggregate_failures do
-      foo = loaded.detect { |c| c.name == "foo" }
-      expect(foo).to have_attributes(
-        type: :boolean,
-        default: false,
-        multi?: true,
-        long_supplied?: false,
-        long: "foo",
-        short_supplied?: false,
-        short: "f",
-        env_supplied?: true,
-        env: "FOO"
-      )
-
-      bar = loaded.detect { |c| c.name == "bar" }
-      expect(bar).to have_attributes(
-        type: :integer,
-        default: nil,
-        multi?: false,
-        long_supplied?: true,
-        long: "bar-bar",
-        short_supplied?: true,
-        short: "a",
-        env_supplied?: false,
-        env: "BAR"
-      )
-    end
-  end
-
-  describe "#name" do
-    subject(:name) { pc.name }
-    it { is_expected.to eq("foo") }
-
-    context "when the name is supplied as a symbol" do
-      let(:supplied_name) { :foo }
-      it { is_expected.to eq("foo") }
-    end
-
-    context "when name has unexpected characters in it" do
-      let(:supplied_name) { "foo-bar" }
-
-      it "raises Invalid" do
-        expect { name }.to raise_error(described_class::Invalid, /'foo-bar' may contain only/)
+    def self.it_is_valid
+      it "is valid" do
+        expect { instantiation }.not_to raise_error
       end
     end
 
-    context "when name is too long" do
-      let(:supplied_name) { "x" * 129 }
-
-      it "raises Invalid" do
-        expect { name }.to raise_error(described_class::Invalid, /xxxx' contains more than 128 characters/)
-      end
-    end
-  end
-
-  describe "#description" do
-    subject(:description) { pc.description }
-    it { is_expected.to eq("Foo is for foo") }
-
-    context "when description is supplied as a symbol" do
-      let(:data) { base.merge("description" => :foo_desc) }
-      it { is_expected.to eq("foo_desc") }
-    end
-
-    context "when description is supplied with a string key" do
-      let(:data) { base.except("description").merge(description: "foo desc") }
-      it { is_expected.to eq("foo desc") }
-    end
-
-    context "when description is supplied as nil" do
-      let(:data) { base.merge("description" => nil) }
-
-      it "raises Invalid" do
-        expect { description }
-          .to raise_error(described_class::Invalid, /description for foo must not be blank/i)
+    def self.it_is_invalid_with(matcher)
+      it "is appropriately invalid" do
+        expect { instantiation }.to raise_error(described_class::Invalid, matcher)
       end
     end
 
-    context "when description is supplied with a blank string" do
-      let(:data) { base.merge("description" => "  ") }
+    it_is_valid
 
-      it "raises Invalid" do
-        expect { description }
-          .to raise_error(described_class::Invalid, /description for foo must not be blank/i)
+    describe "on name" do
+      context "when supplied as a symbol" do
+        let(:supplied_name) { :foo }
+        it_is_invalid_with(/is not a string/)
+      end
+
+      context "when including unexpected characters" do
+        let(:supplied_name) { "foo?" }
+        it_is_invalid_with(/may contain only/)
+      end
+
+      context "when too long" do
+        let(:supplied_name) { "x" * 65 }
+        it_is_invalid_with(/contains more than 64/)
       end
     end
-  end
 
-  describe "#type" do
-    subject(:type) { pc.type }
-    it { is_expected.to eq(:boolean) }
+    describe "on description" do
+      context "when not supplied" do
+        let(:data) { base_data.except(:description) }
+        it_is_invalid_with(/must be supplied for/)
+      end
 
-    context "when supplied as a symbol" do
-      let(:data) { base.merge(type: :boolean) }
-      it { is_expected.to eq(:boolean) }
-    end
+      context "when not a string" do
+        let(:description) { :foo_is_foo }
+        it_is_invalid_with(/must be supplied as a string/)
+      end
 
-    context "when supplied with a symbol key" do
-      let(:data) { base.except("type").merge(type: "boolean") }
-      it { is_expected.to eq(:boolean) }
-    end
+      context "when blank" do
+        let(:description) { "    " }
+        it_is_invalid_with(/must not be blank/)
+      end
 
-    context "when supplied with an unrecognized type" do
-      let(:data) { base.merge("type" => "hash") }
-
-      it "raises Invalid" do
-        expect { type }.to raise_error(described_class::Invalid, /for foo is not recognized/i)
+      context "when including newlines" do
+        let(:description) { "Foo\nis\nFoo" }
+        it_is_invalid_with(/may not include newlines/)
       end
     end
-  end
 
-  describe "#default" do
-    subject(:default) { pc.default }
-    it { is_expected.to eq(true) }
+    describe "on type" do
+      context "when not supplied" do
+        let(:data) { base_data.except(:type) }
+        it_is_invalid_with(/Type for foo was not supplied/)
+      end
 
-    def self.it_accepts(desc, supplied, produced, produced_name = nil)
-      context "when supplied with #{desc}" do
-        let(:data) { base.merge("type" => type, "default" => supplied) }
+      context "when supplied with a non-string value" do
+        let(:type) { :boolean }
+        it_is_invalid_with(/Type for foo must be supplied as a string/)
+      end
 
-        it "produces #{produced_name || produced} for #{supplied}" do
-          expect(pc.default).to eq(produced)
+      context "when supplied with an unrecognized type" do
+        let(:type) { "hash" }
+        it_is_invalid_with(/Type supplied for foo is not recognized/)
+      end
+    end
+
+    describe "on multi" do
+      let(:default) { nil }
+
+      context "when not a boolean" do
+        let(:multi) { 5 }
+        it_is_invalid_with(/non-boolean for 'multi'/)
+      end
+
+      context "when nil" do
+        let(:multi) { nil }
+        it_is_invalid_with(/non-boolean for 'multi'/)
+      end
+
+      context "when true" do
+        let(:multi) { true }
+        it_is_valid
+      end
+    end
+
+    describe "on enabled" do
+      context "when enabled includes fewer values" do
+        let(:enabled) { ["short", "file"] }
+        it_is_valid
+      end
+
+      context "when enabled is not an array" do
+        let(:enabled) { true }
+        it_is_invalid_with(/non-array supplied for 'enabled'/)
+      end
+
+      context "when enabled is empty" do
+        let(:enabled) { [] }
+        it_is_invalid_with(/has no input methods enabled/)
+      end
+
+      context "when enabled contains unexpected values" do
+        let(:enabled) { ["long", "short", "medium", "file", "spoken"] }
+        it_is_invalid_with(/unrecognized 'enabled' values: medium, spoken/)
+      end
+    end
+
+    describe "on default" do
+      context "when not supplied" do
+        let(:data) { base_data.except(:default) }
+        it_is_invalid_with(/Default not supplied for foo/)
+      end
+
+      context "when multi-valued" do
+        let(:type) { "boolean" }
+        let(:multi) { true }
+
+        context "and the value is not an array" do
+          let(:default) { true }
+          it_is_invalid_with(/Default for multi-valued foo is not an array/)
+        end
+
+        context "and the value is nil" do
+          let(:default) { nil }
+          it_is_valid
+        end
+
+        context "and one of the values is not the right type" do
+          let(:default) { [true, true, false, 5, false] }
+          it_is_invalid_with(/Default for foo includes non-boolean values/)
+        end
+      end
+
+      context "when not multi-valued" do
+        let(:multi) { false }
+
+        context "when type is boolean" do
+          let(:type) { "boolean" }
+
+          context "and value is nil" do
+            let(:default) { nil }
+            it_is_valid
+          end
+
+          context "and value is not boolean" do
+            let(:default) { 5 }
+            it_is_invalid_with(/Default for foo is not a boolean/)
+          end
+
+          context "and value is boolean" do
+            let(:default) { true }
+            it_is_valid
+          end
+        end
+
+        context "when type is string" do
+          let(:type) { "string" }
+
+          context "and value is nil" do
+            let(:default) { nil }
+            it_is_valid
+          end
+
+          context "and value is not a string" do
+            let(:default) { 5 }
+            it_is_invalid_with(/Default for foo is not a string/)
+          end
+
+          context "and value is a string" do
+            let(:default) { "hello" }
+            it_is_valid
+          end
+        end
+
+        context "when type is integer" do
+          let(:type) { "integer" }
+
+          context "and value is nil" do
+            let(:default) { nil }
+            it_is_valid
+          end
+
+          context "and value is not an integer" do
+            let(:default) { 6.4 }
+            it_is_invalid_with(/Default for foo is not a integer/)
+          end
+
+          context "and value is an integer" do
+            let(:default) { 6 }
+            it_is_valid
+          end
+        end
+
+        context "when type is float" do
+          let(:type) { "float" }
+
+          context "and value is nil" do
+            let(:default) { nil }
+            it_is_valid
+          end
+
+          context "and value is not a float" do
+            let(:default) { true }
+            it_is_invalid_with(/Default for foo is not a float/)
+          end
+
+          context "and value is an integer" do
+            let(:default) { 6 }
+            it_is_valid
+          end
+
+          context "and value is a float" do
+            let(:default) { 6.5 }
+            it_is_valid
+          end
         end
       end
     end
 
-    def self.it_raises(desc, supplied, message_matcher)
-      context "when supplied with #{desc}" do
-        let(:data) { base.merge("type" => type, "default" => supplied) }
+    describe "on long" do
+      context "when not supplied" do
+        let(:data) { base_data.except(:long) }
+        it_is_valid
+      end
 
-        it "raises Invalid appropriately" do
-          expect { pc.default }.to raise_error(described_class::Invalid, message_matcher)
-        end
+      context "when not a string" do
+        let(:long) { :my_long }
+        it_is_invalid_with(/Long flag.*is not a string/)
+      end
+
+      context "when including whitespace" do
+        let(:long) { "my long" }
+        it_is_invalid_with(/Long flag.*foo includes whitespace/)
       end
     end
 
-    context "when type is :boolean" do
-      let(:type) { "boolean" }
+    describe "on long" do
+      context "when not supplied" do
+        let(:data) { base_data.except(:long) }
+        it_is_valid
+      end
 
-      it_accepts "nil", nil, nil, "nil"
-      it_accepts "true", true, true
-      it_accepts "false", false, false
-      it_raises "a string", "string-foo", /not a boolean/i
-      it_raises "a number", 1.5, /not a boolean/i
+      context "when not a string" do
+        let(:long) { :my_long }
+        it_is_invalid_with(/Long flag.*is not a string/)
+      end
+
+      context "when including whitespace" do
+        let(:long) { "my long" }
+        it_is_invalid_with(/Long flag.*foo includes whitespace/)
+      end
+
+      context "when too long" do
+        let(:long) { "x" * 65 }
+        it_is_invalid_with(/Long flag for foo is over 64 characters/)
+      end
     end
 
-    context "when type is :string" do
-      let(:type) { "string" }
+    describe "on short" do
+      context "when not supplied" do
+        let(:data) { base_data.except(:short) }
+        it_is_valid
+      end
 
-      it_accepts "nil", nil, nil, "nil"
-      it_accepts "an empty string", "", ""
-      it_accepts "a non-empty string", "foo-bar", "foo-bar"
-      it_raises "a boolean", false, /not a string/
-      it_raises "a number", 4, /not a string/
+      context "when not a string" do
+        let(:short) { :a }
+        it_is_invalid_with(/Short flag.*is not a string/)
+      end
+
+      context "when not a supported character" do
+        let(:short) { "?" }
+        it_is_invalid_with(/Short flag.*foo.*single letter or digit/)
+      end
+
+      context "when too long" do
+        let(:short) { "xx" }
+        it_is_invalid_with(/Short flag.*foo.*single/)
+      end
     end
 
-    context "when type is :integer" do
-      let(:type) { "integer" }
+    describe "on env" do
+      context "when not supplied" do
+        let(:data) { base_data.except(:env) }
+        it_is_valid
+      end
 
-      it_accepts "nil", nil, nil, "nil"
-      it_accepts "0", 0, 0
-      it_accepts "1024", 1024, 1024
-      it_accepts "-5", -5, -5
-      it_raises "a boolean", true, /not an integer/
-      it_raises "a string", "foo", /not an integer/
-      it_raises "a float", 1.6, /not an integer/
-    end
+      context "when not a string" do
+        let(:env) { :my_env }
+        it_is_invalid_with(/ENV name.*is not a string/)
+      end
 
-    context "when type is :float" do
-      let(:type) { "float" }
+      context "when including whitespace" do
+        let(:env) { "my env" }
+        it_is_invalid_with(/ENV name.*may only contain/)
+      end
 
-      it_accepts "nil", nil, nil, "nil"
-      it_accepts "0", 0, 0
-      it_accepts "0.5", 0.5, 0.5
-      it_accepts "-0.75", -0.75, -0.75
-      it_accepts "an integer", 1024, 1024, "the integer"
-      it_raises "a boolean", true, /not a float/
-      it_raises "a string", "foo", /not a float/
-    end
-  end
+      context "when not starting with a letter" do
+        let(:env) { "0FOO" }
+        it_is_invalid_with(/ENV name.*must begin with a letter/)
+      end
 
-  describe "#multi?" do
-    subject(:multi?) { pc.multi? }
-
-    context "when :multi is not supplied" do
-      let(:data) { base.except(:multi) }
-      it { is_expected.to be_falsey }
-    end
-
-    context "when :multi is supplied as true" do
-      let(:data) { base.merge("multi" => true) }
-      it { is_expected.to be_truthy }
-    end
-
-    context "when :multi is supplied as false" do
-      let(:data) { base.merge("multi" => false) }
-      it { is_expected.to be_falsey }
-    end
-
-    context "when :multi is supplied as 5" do
-      let(:data) { base.merge("multi" => 5) }
-
-      it "raises Invalid" do
-        expect { multi }.to raise_error(described_class::Invalid, /foo may not take a non-bool/i)
+      context "when too long" do
+        let(:env) { "x" * 65 }
+        it_is_invalid_with(/ENV name for foo is over 64 characters/)
       end
     end
   end
 
-  describe "#long_supplied?" do
-    subject(:long_supplied?) { pc.long_supplied? }
+  describe "#enabled" do
+    subject { pc.enabled }
 
-    context "when it is supplied" do
-      let(:data) { base.merge("long" => "foo") }
-      it { is_expected.to be_truthy }
+    context "when not supplied" do
+      let(:data) { base_data.except(:enabled) }
+      it { is_expected.to match_array(described_class::KNOWN_ENABLED_VALUES) }
     end
 
-    context "when it is not supplied" do
-      let(:data) { base.except("long") }
-      it { is_expected.to be_falsey }
-    end
-
-    context "when it supplied as nil" do
-      let(:data) { base.merge("long" => nil) }
-      it { is_expected.to be_truthy }
+    context "when supplied with a subset" do
+      let(:enabled) { ["long", "short"] }
+      it { is_expected.to contain_exactly("long", "short") }
     end
   end
 
   describe "#long" do
-    subject(:long) { pc.long }
+    subject { pc.long }
 
     context "when not supplied" do
-      let(:data) { base.except("long") }
+      let(:data) { base_data.except(:long) }
       it { is_expected.to eq("foo") }
 
       context "and the name includes underscores" do
@@ -267,125 +355,31 @@ RSpec.describe Unfig::ParamConfig do
       end
     end
 
-    context "when supplied as a number" do
-      let(:data) { base.merge("long" => 55) }
-
-      it "raises Invalid" do
-        expect { long }.to raise_error(described_class::Invalid, /for foo is not a string/i)
-      end
-    end
-
-    context "when supplied as an array" do
-      let(:data) { base.merge("long" => ["foo", "bar"]) }
-
-      it "raises Invalid" do
-        expect { long }.to raise_error(described_class::Invalid, /for foo is not a string/i)
-      end
-    end
-
     context "when supplied as a string" do
-      let(:data) { base.merge("long" => "a-string") }
+      let(:long) { "a-string" }
       it { is_expected.to eq("a-string") }
-
-      context "which includes whitespace" do
-        let(:data) { base.merge("long" => "a string") }
-
-        it "raises invalid" do
-          expect { long }.to raise_error(described_class::Invalid, /for foo includes whitespace/i)
-        end
-      end
-    end
-  end
-
-  describe "#short_supplied?" do
-    subject(:short_supplied?) { pc.short_supplied? }
-
-    context "when it is supplied" do
-      let(:data) { base.merge("short" => "foo") }
-      it { is_expected.to be_truthy }
-    end
-
-    context "when it is not supplied" do
-      let(:data) { base.except("short") }
-      it { is_expected.to be_falsey }
-    end
-
-    context "when it supplied as nil" do
-      let(:data) { base.merge("short" => nil) }
-      it { is_expected.to be_truthy }
     end
   end
 
   describe "#short" do
-    subject(:short) { pc.short }
+    subject { pc.short }
 
     context "when not supplied" do
-      let(:data) { base.except("short") }
+      let(:data) { base_data.except(:short) }
       it { is_expected.to eq("f") }
     end
 
-    context "when supplied as a number" do
-      let(:data) { base.merge("short" => 5) }
-
-      it "raises Invalid" do
-        expect { short }.to raise_error(described_class::Invalid, /for foo is not a string/i)
-      end
-    end
-
-    context "when supplied as an array" do
-      let(:data) { base.merge("short" => ["X", "v"]) }
-
-      it "raises Invalid" do
-        expect { short }.to raise_error(described_class::Invalid, /for foo is not a string/i)
-      end
-    end
-
     context "when supplied as a string" do
-      let(:data) { base.merge("short" => "a") }
+      let(:short) { "a" }
       it { is_expected.to eq("a") }
-
-      context "which is not a single character" do
-        let(:data) { base.merge("short" => "foo") }
-
-        it "raises invalid" do
-          expect { short }.to raise_error(described_class::Invalid, /for foo must be/i)
-        end
-      end
-
-      context "which contains a not-allowed value" do
-        let(:data) { base.merge("short" => "?") }
-
-        it "raises Invalid" do
-          expect { short }.to raise_error(described_class::Invalid, /for foo must be/i)
-        end
-      end
-    end
-  end
-
-  describe "#env_supplied?" do
-    subject(:env_supplied?) { pc.env_supplied? }
-
-    context "when it is supplied" do
-      let(:data) { base.merge("env" => "foo") }
-      it { is_expected.to be_truthy }
-    end
-
-    context "when it is not supplied" do
-      let(:data) { base.except("env") }
-      it { is_expected.to be_falsey }
-    end
-
-    context "when it supplied as nil" do
-      let(:data) { base.merge("env" => nil) }
-      it { is_expected.to be_truthy }
     end
   end
 
   describe "#env" do
-    subject(:env) { pc.env }
+    subject { pc.env }
 
     context "when not supplied" do
-      let(:data) { base.except("env") }
+      let(:data) { base_data.except(:env) }
       it { is_expected.to eq("FOO") }
 
       context "and name includes underscores" do
@@ -394,41 +388,9 @@ RSpec.describe Unfig::ParamConfig do
       end
     end
 
-    context "when supplied as a number" do
-      let(:data) { base.merge("env" => 5) }
-
-      it "raises Invalid" do
-        expect { env }.to raise_error(described_class::Invalid, /for foo is not a string/i)
-      end
-    end
-
-    context "when supplied as an array" do
-      let(:data) { base.merge("env" => ["X", "v"]) }
-
-      it "raises Invalid" do
-        expect { env }.to raise_error(described_class::Invalid, /for foo is not a string/i)
-      end
-    end
-
     context "when supplied as a string" do
-      let(:data) { base.merge("env" => "FOO2") }
+      let(:env) { "FOO2" }
       it { is_expected.to eq("FOO2") }
-
-      context "which contains a not-allowed character" do
-        let(:data) { base.merge("env" => "FOO?") }
-
-        it "raises Invalid" do
-          expect { env }.to raise_error(described_class::Invalid, /for foo may only contain/i)
-        end
-      end
-
-      context "which starts with a non-alphabetic" do
-        let(:data) { base.merge("env" => "2FOO") }
-
-        it "raises Invalid" do
-          expect { env }.to raise_error(described_class::Invalid, /for foo must begin with a letter/i)
-        end
-      end
     end
   end
 end
