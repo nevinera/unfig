@@ -41,6 +41,8 @@ module Unfig
 
     def nonstring?(s) = !s.is_a?(String)
 
+    def nonstringlike?(s) = !(s.is_a?(String) || s.is_a?(Symbol))
+
     def blank?(s) = !/\S/.match?(s)
 
     def whitespace?(s) = /\s/.match?(s)
@@ -64,7 +66,7 @@ module Unfig
     # validators
 
     def validate_name!
-      invalid!("Name is not a string") if nonstring?(name)
+      invalid!("Name is not a string") if nonstringlike?(name)
       invalid!("Name may contain only alphanumerics and underscores") unless alphanumeric?(name)
       invalid!("Name contains more than #{MAX_NAME} characters") if name.length > MAX_NAME
     end

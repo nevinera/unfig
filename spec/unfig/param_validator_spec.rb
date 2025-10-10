@@ -33,7 +33,7 @@ RSpec.describe Unfig::ParamValidator do
     describe "on name" do
       context "when supplied as a symbol" do
         let(:supplied_name) { :foo }
-        it_is_invalid_with(/is not a string/)
+        it_is_valid
       end
 
       context "when including unexpected characters" do
