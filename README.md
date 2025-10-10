@@ -1,4 +1,4 @@
-# Unfig 
+# Unfig
 
 We've written code that merges/cascades some combination of defaults, config-files,
 environment-variables, and cli-supplied parameters *too many times*. In one of my
