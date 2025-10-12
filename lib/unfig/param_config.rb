@@ -21,7 +21,7 @@ module Unfig
       ParamValidator.new(@name, @data).validate!
     end
 
-    attr_reader :name
+    def name = @name.to_s
 
     def description = data.fetch(:description)
 

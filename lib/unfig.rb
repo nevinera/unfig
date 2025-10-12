@@ -6,3 +6,4 @@ end
 require_relative "unfig/version"
 require_relative "unfig/param_config"
 require_relative "unfig/param_validator"
+require_relative "unfig/params_config"
