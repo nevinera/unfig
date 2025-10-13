@@ -84,4 +84,4 @@ And for each parameter, we have these options:
   dashes and (b) the first letter of the parameter name.
 * `env` - the name of the environment variable to consult. By default, it's the
   parameter name up-cased, but like.. if your parameter is `user`, you may need
-  to look at `MYGEM_USER` instead for example.
+  to look at `MYGEM_USER` instead for example (unless you _want_ the unix USER).
