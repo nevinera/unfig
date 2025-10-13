@@ -10,6 +10,8 @@ module Unfig
 
       @_read = {}
       params.params.each do |p|
+        next unless p.enabled.include?("env")
+
         reader = EnvReader.new(param: p, env: env)
         @_read[p.name] = reader.value if reader.supplied?
       end
