@@ -7,62 +7,81 @@ its 20+ control parameters. That's ridiculous.
 
 The intent of `unfig` is to consolidate all of that capability, so that we
 just need to specify what configuration exists (and optionally how it can be
-supplied) in a straightforward yaml config, and stop worrying about it.
+supplied) in a straightforward way, and stop worrying about it.
 
 ## Usage Example (currently tentative)
 
-Let's use a config file (at config/unfig.yml) like.. this:
-
-```yaml
----
-values:
-  verbose:
-    description: Expose much more information in the logs
-    long: "verbose"
-    short: "v"
-    type: boolean
-    skip: ["config"]
-    default: false
-  parallel:
-    description: Run in parallel instead of serially
-    long: ["parallel", "concurrent"]
-    short: ["p", "c"]
-    type: boolean
-    default: false
-```
-
-Now, in my cli script I can do this (`REPO_ROOT` is the path of the repository _using_
-my gem FooBar, which itself describes its configuration using Unfig):
+Let's invoke Unfig like this, as an example:
 
 ```ruby
 require "unfig"
 
-unfig_path = File.expand_path("../config/unfig.yml", __dir__)
-config_path = File.join(REPO_ROOT, ".foo_bar.yml")
-config = Unfig.parse(unfig_path, argv: ARGV, config: config_path, format: :struct)
-
-Logger.verbosity = :debug if config.verbose?
-FooBar.execute!(parallel: config.parallel?)
+@options = Unfig.load_options(
+  config: File.expand_path("~/.mygem.yml"),
+  values: {
+    verbose: {
+      description: "Expose much more information in the logs",
+      type: "boolean",
+      default: false,
+    },
+    parallel: {
+      description: "Run in parallel instead of serially",
+      type: "boolean",
+      default: false,
+    }
+  }
+)
 ```
 
-And it just.. works. `optparse` is _awesome_ (and will be involved), but now you
-can stick a yaml file like `parallel: true` in `.foo_bar.yml`, and supply `--vebose`
-on the command-line or like VERBOSE=true in your environment.
+Now I'll have an `@options` object (a Hash, since we didn't specify), and the
+user can supply either of those options on the command-line, in the environment,
+or in a config-file in their home directory.
 
-## Details
+It's more configurable than that of course. At the top-level, it accepts these
+options:
 
-The `Unfig.parse` method requires a path to a 'unfig' config file as its
-only positional parameter, but it accepts these named options:
+* `config` - where to search for the (yaml) config file that might specify some
+  of these parameters. Optional - if not supplied, no config-file will be used.
+* `banner` - what to say on the command-line when help is invoked (usually a
+  usage example). Optional - if not supplied, no banner is present.
+* `format` - what sort of object comes out of the `load` call; one of
+  `[:hash, :struct, :openstruct]`. If not supplied, defaults to `:hash`.
+* `argv` - Usually this is `ARGV` (the default), but if you want to interact
+  with the separately, you could supply `argv: ARGV.dup`, or just an array
+  of arguments.
+* `env` - Usually this is `ENV` (the default), but if you want, you can just
+  pass an arbitrary Hash(String => String) here instead.
+* `params` - the parameter configurations; keys are parameter names (symbol or
+  string), and values are parameter configs.
 
-* argv: (required) The supplied arguments to the script (usually just ARGV).
-  If you supply `nil` as the value, no command-line parameters will be
-  parsed/accepted.
-* config: (required) The path to the _local_ config file - the project using
-  *your gem* is able to specify local defaults for *your* options. If you
-  supply `nil`, then no local defaults will be used.
-* env: (default: ENV) This is rarely supplied outside of testing, but you can
-  supply a Hash instead of just letting the gem read values from ENV. If you
-  supply `nil`, environment will not be used at all.
-* format (default: `hash`) One of `hash`, `struct` or `ostruct` - what comes
-  _out_ of the `parse` method will either be a hash (with symbol keys), a
-  generated Struct, or an OpenStruct.
+And for each parameter, we have these options:
+
+* `name` - this is the key in the params hash. It can be a String or Symbol,
+  it must start with a letter, and it may contain only letters, numbers, and
+  underscores. No more than 64 characters long.
+* `description` - this will be used as the description of the parameter on the
+  cli - it is required, must be a non-blank string, and may contain no newlines.
+* `type` - this is the type to cast the supplied values into - it is required,
+  and must be one of "boolean", "string", "integer", or "float" (a String).
+* `multi` - this specifies whether the parameter can be "multi-valued" (default
+  is false). If true, supplying the flag more than once, or supplying an array
+  of values in the config file, or (more awkwardly) setting multiple environment
+  variables with numeric suffixes (`FOO_0` through `FOO_9` for an option `foo`)
+  will allow you to supply multiple values, and the parameter will return an
+  Array (whether you actually do so or not).
+* `enabled` - which configuration methods are supported for the parameter. By
+  default all of them will be, but you can for example exclude `verbose` from
+  being supplied via the config file if you want to, or only support the _long_
+  flag (`--verbose` works but not `-v`).
+* `default` - what value should this parameter have if they don't supply one?
+  If you supplied `multi: true`, this is required to be an array of defaults;
+  in either case, the _type_ of the default will be validated against the
+  supplied `type`.
+* `long`/`short` - these can override the default long/short cli flags. This is
+  particularly important for `short`, since two parameters that start with the
+  same letter will automatically collide unless it's supplied for one of them.
+  The default values are (a) the parameter-name, but with underscores mapped to
+  dashes and (b) the first letter of the parameter name.
+* `env` - the name of the environment variable to consult. By default, it's the
+  parameter name up-cased, but like.. if your parameter is `user`, you may need
+  to look at `MYGEM_USER` instead for example.
