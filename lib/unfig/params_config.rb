@@ -15,6 +15,8 @@ module Unfig
       @_params = built
     end
 
+    def banner = data[:banner]
+
     private
 
     attr_reader :data

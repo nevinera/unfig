@@ -30,6 +30,20 @@ RSpec.describe Unfig::ParamsConfig do
     end
   end
 
+  describe "#banner" do
+    subject(:banner) { config.banner }
+
+    context "when no banner is supplied" do
+      let(:data) { {params: {foo: foo_config, bar: bar_config, baz: baz_config}} }
+      it { is_expected.to be_nil }
+    end
+
+    context "when a banner is supplied" do
+      let(:data) { {banner: "This banner", params: {foo: foo_config, bar: bar_config, baz: baz_config}} }
+      it { is_expected.to eq("This banner") }
+    end
+  end
+
   describe "#params" do
     subject(:params) { config.params }
 
