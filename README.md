@@ -85,3 +85,16 @@ And for each parameter, we have these options:
 * `env` - the name of the environment variable to consult. By default, it's the
   parameter name up-cased, but like.. if your parameter is `user`, you may need
   to look at `MYGEM_USER` instead for example (unless you _want_ the unix USER).
+
+The configurations will be loaded from all four sources, in this priority order:
+
+* cli flags - if the user supplies these, they are likely intending to override
+  default or configured behaviors.
+* environment variables - these are a typical way to configure a machine with
+  its intended behavior, though specifying a parameter in a *personal* config
+  file _and_ an environment variable is infrequent, sometimes config files are
+  committed to a repository, and an individual may want to consistently override
+  values supplied in that way.
+* config file - this could be a personal config (in your home directory) or a
+  provided config (committed to your rails app's config/ directory, for example).
+* default value - supplied when invoking Unfig in the script.
