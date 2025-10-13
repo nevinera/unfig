@@ -10,6 +10,8 @@ module Unfig
 
       @_read = {}
       params.params.each do |p|
+        next unless p.enabled.include?("file")
+
         @_read[p.name] = read_for(p) if data.key?(p.name)
       end
       @_read
