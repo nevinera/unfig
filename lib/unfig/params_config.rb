@@ -4,7 +4,8 @@ module Unfig
   # the same flag, or the same name; they'll collide in the implementation.
   class ParamsConfig
     def initialize(data)
-      raise(ArgumentError, "Params-config must be a hash") unless data.is_a?(Hash)
+      raise(Invalid, "Params-config must be a Hash") unless data.is_a?(Hash)
+      raise(Invalid, "Params-config must supply some params (as a Hash)") unless data[:params].is_a?(Hash)
       @data = data
     end
 
@@ -18,7 +19,7 @@ module Unfig
 
     attr_reader :data
 
-    def built = @_built ||= data.map { |k, v| ParamConfig.new(k, v) }
+    def built = @_built ||= data[:params].map { |k, v| ParamConfig.new(k, v) }
 
     def validate!
       validate_no_duplicate_names!

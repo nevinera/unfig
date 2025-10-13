@@ -1,10 +1,34 @@
 RSpec.describe Unfig::ParamsConfig do
   subject(:config) { described_class.new(data) }
 
-  let(:data) { {foo: foo_config, bar: bar_config, baz: baz_config} }
+  let(:data) { {params: {foo: foo_config, bar: bar_config, baz: baz_config}} }
   let(:foo_config) { {description: "The Foo", type: "boolean", default: true} }
   let(:bar_config) { {description: "The Bar", type: "integer", default: 3} }
   let(:baz_config) { {description: "The Baz", type: "string", default: "yes", short: "z"} }
+
+  context "when the supplied config is not a hash" do
+    let(:data) { "hi" }
+
+    it "raises Invalid" do
+      expect { config }.to raise_error(Unfig::Invalid, /must be a Hash/)
+    end
+  end
+
+  context "when the supplied config lacks a :params` key" do
+    let(:data) { {test: "foo"} }
+
+    it "raises Invalid" do
+      expect { config }.to raise_error(Unfig::Invalid, /must supply/)
+    end
+  end
+
+  context "when the supplied config has a non-Hash :params value" do
+    let(:data) { {params: []} }
+
+    it "raises Invalid" do
+      expect { config }.to raise_error(Unfig::Invalid, /must supply/)
+    end
+  end
 
   describe "#params" do
     subject(:params) { config.params }
@@ -16,7 +40,7 @@ RSpec.describe Unfig::ParamsConfig do
     end
 
     context "when two of the params have the same name" do
-      let(:data) { {:foo => foo_config, "foo" => bar_config, :baz => baz_config} }
+      let(:data) { {params: {:foo => foo_config, "foo" => bar_config, :baz => baz_config}} }
 
       it "raises Invalid" do
         expect { params }.to raise_error(Unfig::Invalid, /Duplicate parameter names: foo/)
