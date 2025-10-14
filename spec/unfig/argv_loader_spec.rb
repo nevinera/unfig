@@ -138,5 +138,19 @@ RSpec.describe Unfig::ArgvLoader do
         it { is_expected.to eq({"bam" => 55}) }
       end
     end
+
+    context "when attempting to convert an unrecognized type" do
+      let(:foo) { instance_double(Unfig::ParamConfig, name: "foo", enabled: all, multi?: false, type: "hash", short: "f", long: "foo", description: "My Foo") }
+      let(:argv) { ["--foo=hi"] }
+
+      it "raises Invalid" do
+        expect { read }.to raise_error(Unfig::Invalid, /how to handle type 'hash'/)
+      end
+    end
+
+    context "when supplied with several arguments" do
+      let(:argv) { ["--bar", "--bam", "1.5", "--baz", "8", "--foo=hello", "--baz=9"] }
+      it { is_expected.to eq({"bar" => true, "bam" => 1.5, "foo" => "hello", "baz" => [8, 9]}) }
+    end
   end
 end
