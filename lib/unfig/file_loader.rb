@@ -11,7 +11,6 @@ module Unfig
       @_read = {}
       params.params.each do |p|
         next unless p.enabled.include?("file")
-
         @_read[p.name] = read_for(p) if data.key?(p.name)
       end
       @_read
@@ -46,7 +45,7 @@ module Unfig
       if value.is_a?(Array)
         value.each { |v| validate_type!(p, v) }
       else
-        validate_type!(p, value)
+        raise(InvalidYamlValue, "FileLoader expected an array for #{p.name}, because it's multi-valued")
       end
     end
 

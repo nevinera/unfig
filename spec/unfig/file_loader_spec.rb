@@ -52,7 +52,9 @@ RSpec.describe Unfig::FileLoader do
         YAML
       end
 
-      it { is_expected.to eq({"foo" => "hi", "bar" => true, "baz" => 44, "bam" => 1.5}) }
+      it "raises InvalidYamlValue" do
+        expect { read }.to raise_error(Unfig::InvalidYamlValue, /expected an array for baz.*multi-valued/)
+      end
     end
 
     context "when a string parameter is supplied incorrectly" do
@@ -72,7 +74,7 @@ RSpec.describe Unfig::FileLoader do
     end
 
     context "when an integer parameter is supplied incorrectly" do
-      let(:yaml) { "{baz: 1.6}" }
+      let(:yaml) { "{baz: [1.6]}" }
 
       it "raises InvalidYamlValue" do
         expect { read }.to raise_error(Unfig::InvalidYamlValue, /expected an integer for baz, but got Float/)
