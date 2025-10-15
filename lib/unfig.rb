@@ -1,6 +1,5 @@
 require "yaml"
 require "optparse"
-require "ostruct"
 
 module Unfig
   UNSUPPLIED = Object.new.freeze

@@ -57,6 +57,12 @@ module Unfig
       struct.new(**merged_values)
     end
 
-    def openstruct_values = OpenStruct.new(merged_values)
+    def openstruct_values
+      # Don't require ostruct unless they try to use it (we don't want to make it one of _our_
+      # dependencies, but if they try to use it without making it one of _theirs_, ruby will
+      # inform them)
+      require "ostruct"
+      OpenStruct.new(merged_values)
+    end
   end
 end
