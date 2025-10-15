@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+require "json"
+require_relative "../../lib/unfig"
+
+config_path = File.expand_path("../test_defaults.yml", __FILE__)
+opts = Unfig.load_options(
+  format: :struct,
+  config: config_path,
+  banner: "Usage: like, whatever really",
+  values: {
+    verbose: {description: "print lots?", type: "boolean", default: false, enabled: %w[short long env]},
+    color: {description: "in color?", type: "boolean", default: true},
+    voltron: {description: "parts of Voltron", type: "string", default: [], multi: true, short: "V"},
+    size: {description: "in liters", type: "float", default: nil, long: "size-in-liters"},
+    count: {description: "how many", type: "integer", default: 1, short: "n", enabled: %w[short env]}
+  }
+)
+
+puts "parsed configuration:"
+puts "---------------------"
+puts ""
+puts "verbose: #{opts.verbose}"
+puts "color: #{opts.color}"
+puts "voltron: #{opts.voltron.to_json}"
+puts "size: #{opts.size}"
+puts "count: #{opts.count}"
