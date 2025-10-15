@@ -15,6 +15,8 @@ module Unfig
 
   InvalidYamlValue = Class.new(Error)
   FlagError = Class.new(Error)
+
+  def self.load_options(**) = Loader.new(**).read
 end
 
 require_relative "unfig/version"
