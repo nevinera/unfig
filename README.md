@@ -40,17 +40,17 @@ or in a config-file in their home directory.
 It's more configurable than that of course. At the top-level, it accepts these
 options:
 
+* `argv` - Usually this is `ARGV` (the default), but if you want to interact
+  with the separately, you could supply `argv: ARGV.dup`, or just an array
+  of arguments.
+* `env` - Usually this is `ENV` (the default), but if you want, you can just
+  pass an arbitrary Hash(String => String) here instead.
 * `config` - where to search for the (yaml) config file that might specify some
   of these parameters. Optional - if not supplied, no config-file will be used.
 * `banner` - what to say on the command-line when help is invoked (usually a
   usage example). Optional - if not supplied, no banner is present.
 * `format` - what sort of object comes out of the `load` call; one of
   `[:hash, :struct, :openstruct]`. If not supplied, defaults to `:hash`.
-* `argv` - Usually this is `ARGV` (the default), but if you want to interact
-  with the separately, you could supply `argv: ARGV.dup`, or just an array
-  of arguments.
-* `env` - Usually this is `ENV` (the default), but if you want, you can just
-  pass an arbitrary Hash(String => String) here instead.
 * `params` - the parameter configurations; keys are parameter names (symbol or
   string), and values are parameter configs.
 
