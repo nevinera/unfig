@@ -10,8 +10,8 @@ Gem::Specification.new do |spec|
   spec.description = <<~DESC
     We've written code that merges/cascades default configuration, config-files,
     environment variables, and cli-passed arguments _too many times_. This gem
-    intends to distill that into a configuration config-file describing those
-    controls and relationships.
+    intends to distill that into a configuration hash describing those controls
+    and relationships, so that users can supply values in multiple ways.
   DESC
   spec.homepage = "https://github.com/nevinera/unfig"
   spec.license = "MIT"
