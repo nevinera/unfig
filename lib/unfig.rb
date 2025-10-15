@@ -1,7 +1,10 @@
 require "yaml"
 require "optparse"
+require "ostruct"
 
 module Unfig
+  UNSUPPLIED = Object.new.freeze
+
   Error = Class.new(StandardError)
   Invalid = Class.new(Error)
 
@@ -22,3 +25,4 @@ require_relative "unfig/env_reader"
 require_relative "unfig/env_loader"
 require_relative "unfig/file_loader"
 require_relative "unfig/argv_loader"
+require_relative "unfig/loader"
