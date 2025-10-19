@@ -10,7 +10,7 @@ module Unfig
       validate!
     end
 
-    def params = @_params ||= data[:params].map { |k, v| ParamConfig.new(k, v) }
+    def params = @_params ||= data[:params].map { |k, v| ParamConfig.new(k, v, env_prefix:) }
 
     def banner = data[:banner]
 
@@ -20,7 +20,7 @@ module Unfig
 
     attr_reader :data
 
-    def built = @_built ||= data[:params].map { |k, v| ParamConfig.new(k, v) }
+    def built = @_built ||= data[:params].map { |k, v| ParamConfig.new(k, v, env_prefix:) }
 
     def validate!
       validate_banner_is_string!

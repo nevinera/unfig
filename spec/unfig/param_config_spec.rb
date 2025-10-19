@@ -1,6 +1,7 @@
 RSpec.describe Unfig::ParamConfig do
-  subject(:pc) { described_class.new(supplied_name, data) }
+  subject(:pc) { described_class.new(supplied_name, data, env_prefix:) }
 
+  let(:env_prefix) { "" }
   let(:supplied_name) { "foo" }
   let(:base_data) { {description:, type:, enabled:, default:, multi:, count:, env:, long:, short:} }
   let(:data) { base_data }
@@ -76,6 +77,11 @@ RSpec.describe Unfig::ParamConfig do
       let(:data) { base_data.except(:env) }
       it { is_expected.to eq("FOO") }
 
+      context "and there is an env_prefix supplied" do
+        let(:env_prefix) { "MYGEM_" }
+        it { is_expected.to eq("MYGEM_FOO") }
+      end
+
       context "and name includes underscores" do
         let(:supplied_name) { "foo_bar" }
         it { is_expected.to eq("FOO_BAR") }
@@ -85,6 +91,11 @@ RSpec.describe Unfig::ParamConfig do
     context "when supplied as a string" do
       let(:env) { "FOO2" }
       it { is_expected.to eq("FOO2") }
+
+      context "and there is an env_prefix supplied" do
+        let(:env_prefix) { "MYGEM_" }
+        it { is_expected.to eq("MYGEM_FOO2") }
+      end
     end
   end
 
