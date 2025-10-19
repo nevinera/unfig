@@ -1,9 +1,10 @@
 RSpec.describe Unfig::Loader do
-  subject(:loader) { described_class.new(values:, format:, banner:, **inputs) }
+  subject(:loader) { described_class.new(values:, format:, banner:, env_prefix:, **inputs) }
 
   let(:inputs) { {} }
   let(:format) { :hash }
   let(:banner) { nil }
+  let(:env_prefix) { "" }
 
   let(:values) do
     {
@@ -22,6 +23,12 @@ RSpec.describe Unfig::Loader do
 
   describe "#read" do
     subject(:read) { loader.read }
+
+    it "constructs the expected ParamsConfig" do
+      allow(Unfig::ParamsConfig).to receive(:new).and_call_original
+      read
+      expect(Unfig::ParamsConfig).to have_received(:new).with(banner:, env_prefix:, params: values)
+    end
 
     context "when format is :hash" do
       let(:format) { :hash }
