@@ -13,9 +13,10 @@ module Unfig
   class ParamConfig
     KNOWN_ENABLED_VALUES = ["long", "short", "env", "file"].to_set.freeze
 
-    def initialize(name, data)
+    def initialize(name, data, env_prefix:)
       @name = name
       @data = data.transform_keys(&:to_sym)
+      @env_prefix = env_prefix
       ParamValidator.new(@name, @data).validate!
     end
 
@@ -55,14 +56,14 @@ module Unfig
 
     def env
       if data.key?(:env)
-        data.fetch(:env, nil)
+        env_prefix + data.fetch(:env, nil)
       else
-        name.upcase
+        env_prefix + name.upcase
       end
     end
 
     private
 
-    attr_reader :data
+    attr_reader :data, :env_prefix
   end
 end
