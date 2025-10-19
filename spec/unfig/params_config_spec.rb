@@ -42,6 +42,45 @@ RSpec.describe Unfig::ParamsConfig do
       let(:data) { {banner: "This banner", params: {foo: foo_config, bar: bar_config, baz: baz_config}} }
       it { is_expected.to eq("This banner") }
     end
+
+    context "when a non-string banner is supplied" do
+      let(:data) { {banner: :mybanner, params: {foo: foo_config, bar: bar_config, baz: baz_config}} }
+
+      it "raises Invalid" do
+        expect { banner }.to raise_error(Unfig::Invalid, /Non-string banner supplied/)
+      end
+    end
+  end
+
+  describe "#env_prefix" do
+    subject(:env_prefix) { config.env_prefix }
+
+    context "when no env_prefix is supplied" do
+      let(:data) { {params: {foo: foo_config, bar: bar_config, baz: baz_config}} }
+      it { is_expected.to eq("") }
+    end
+
+    context "when an env_prefix is supplied" do
+      let(:data) { {env_prefix: supplied_prefix, params: {foo: foo_config, bar: bar_config, baz: baz_config}} }
+      let(:supplied_prefix) { "FOO" }
+      it { is_expected.to eq("FOO") }
+
+      context "with some whitespace included" do
+        let(:supplied_prefix) { "FOO BAR" }
+
+        it "raises Invalid" do
+          expect { env_prefix }.to raise_error(Unfig::Invalid, /No whitespace is allowed/)
+        end
+      end
+
+      context "when a non-string env_prefix is supplied" do
+        let(:supplied_prefix) { 5 }
+
+        it "raises Invalid" do
+          expect { env_prefix }.to raise_error(Unfig::Invalid, /Non-string env_prefix/)
+        end
+      end
+    end
   end
 
   describe "#params" do
