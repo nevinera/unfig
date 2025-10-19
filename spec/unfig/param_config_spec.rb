@@ -94,7 +94,7 @@ RSpec.describe Unfig::ParamConfig do
 
       context "and there is an env_prefix supplied" do
         let(:env_prefix) { "MYGEM_" }
-        it { is_expected.to eq("MYGEM_FOO2") }
+        it { is_expected.to eq("FOO2") }
       end
     end
   end

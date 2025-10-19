@@ -58,7 +58,7 @@ module Unfig
 
     def env
       if data.key?(:env)
-        env_prefix + data.fetch(:env, nil)
+        data.fetch(:env, nil)
       else
         env_prefix + name.upcase
       end
