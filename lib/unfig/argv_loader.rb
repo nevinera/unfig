@@ -37,7 +37,7 @@ module Unfig
     end
 
     def short_arg(p)
-      if p.type == "boolean"
+      if p.type == "boolean" || p.count?
         "-#{p.short}"
       else
         "-#{p.short}#{p.name.upcase}"
@@ -45,7 +45,9 @@ module Unfig
     end
 
     def long_arg(p)
-      if p.type == "boolean"
+      if p.count?
+        "--#{p.long}"
+      elsif p.type == "boolean"
         "--[no-]#{p.long}"
       else
         "--#{p.long}=#{p.name.upcase}"
@@ -71,16 +73,30 @@ module Unfig
       args << p.description
     end
 
+    def initialize_flag_for(p)
+      if p.count?
+        @options[p.name] ||= 0
+      elsif p.multi?
+        @options[p.name] ||= []
+      end
+    end
+
+    def handle_flag_for(p, name, value)
+      if p.count?
+        @options[name] += 1
+      elsif p.multi?
+        @options[name] << value
+      elsif @options.key?(name)
+        raise FlagError, "Cannot supply #{name} more than once"
+      else
+        @options[name] = value
+      end
+    end
+
     def add_option_for(opts, p)
       opts.on(*option_args(p)) do |value|
-        if p.multi?
-          @options[p.name] ||= []
-          @options[p.name] << value
-        elsif @options.key?(p.name)
-          raise FlagError, "Cannot supply #{p.name} more than once"
-        else
-          @options[p.name] = value
-        end
+        initialize_flag_for(p)
+        handle_flag_for(p, p.name, value)
       end
     end
 
