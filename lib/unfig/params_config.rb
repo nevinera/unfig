@@ -7,15 +7,14 @@ module Unfig
       raise(Invalid, "Params-config must be a Hash") unless data.is_a?(Hash)
       raise(Invalid, "Params-config must supply some params (as a Hash)") unless data[:params].is_a?(Hash)
       @data = data
+      validate!
     end
 
-    def params
-      return @_params if defined?(@_params)
-      validate!
-      @_params = built
-    end
+    def params = @_params ||= data[:params].map { |k, v| ParamConfig.new(k, v) }
 
     def banner = data[:banner]
+
+    def env_prefix = data[:env_prefix] || ""
 
     private
 
@@ -24,6 +23,8 @@ module Unfig
     def built = @_built ||= data[:params].map { |k, v| ParamConfig.new(k, v) }
 
     def validate!
+      validate_banner_is_string!
+      validate_env_prefix_is_solid_string!
       validate_no_duplicate_names!
       validate_no_duplicate_long_flags!
       validate_no_duplicate_short_flags!
@@ -58,6 +59,20 @@ module Unfig
       return if dups.none?
 
       raise Invalid, "Duplicate env-names: #{dups.join(", ")}"
+    end
+
+    def validate_banner_is_string!
+      return if banner.nil? || banner.is_a?(String)
+
+      raise Invalid, "Non-string banner supplied"
+    end
+
+    def validate_env_prefix_is_solid_string!
+      if !env_prefix.is_a?(String)
+        raise Invalid, "Non-string env_prefix supplied"
+      elsif /\s/.match?(env_prefix)
+        raise Invalid, "No whitespace is allowed in env_prefix"
+      end
     end
   end
 end
