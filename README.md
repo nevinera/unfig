@@ -9,7 +9,7 @@ The intent of `unfig` is to consolidate all of that capability, so that we
 just need to specify what configuration exists (and optionally how it can be
 supplied) in a straightforward way, and stop worrying about it.
 
-## Usage Example (currently tentative)
+## Usage Example
 
 Let's invoke Unfig like this, as an example:
 
@@ -63,6 +63,10 @@ And for each parameter, we have these options:
   cli - it is required, must be a non-blank string, and may contain no newlines.
 * `type` - this is the type to cast the supplied values into - it is required,
   and must be one of "boolean", "string", "integer", or "float" (a String).
+* `count` - this is only relevant to _integer_ flags - if supplied on one, it
+  behaves the same for other methods, but the ArgvParser will count how often
+  the flag is supplied, rather than taking value. This is generally only used
+  for `-vvv` style verbose flagging.
 * `multi` - this specifies whether the parameter can be "multi-valued" (default
   is false). If true, supplying the flag more than once, or supplying an array
   of values in the config file, or (more awkwardly) setting multiple environment

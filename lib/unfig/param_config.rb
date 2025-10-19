@@ -30,6 +30,8 @@ module Unfig
 
     def multi? = data.fetch(:multi, false)
 
+    def count? = type == "integer" && data.fetch(:count, false)
+
     def enabled
       if data.key?(:enabled)
         data.fetch(:enabled)
