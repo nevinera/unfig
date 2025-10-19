@@ -8,6 +8,7 @@ opts = Unfig.load_options(
   format: :struct,
   config: config_path,
   banner: "Usage: like, whatever really",
+  env_prefix: "TEST_",
   values: {
     verbose: {description: "print lots?", type: "boolean", default: false, enabled: %w[short long env]},
     color: {description: "in color?", type: "boolean", default: true},

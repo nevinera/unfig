@@ -57,7 +57,7 @@ RSpec.describe Unfig do
     end
 
     context "with several options passed in and an env set" do
-      let(:env) { {"COUNT" => "5"} }
+      let(:env) { {"TEST_COUNT" => "5"} }
 
       it "produces the expected output" do
         stdout, stderr, status = Open3.capture3(env, script_path, "--no-color", "--voltron=face", "-v", "--voltron=knee")

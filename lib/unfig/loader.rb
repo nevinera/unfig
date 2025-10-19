@@ -7,6 +7,7 @@ module Unfig
       @values = values
       @format = options.fetch(:format, :hash)
       @banner = options.fetch(:banner, nil)
+      @env_prefix = options.fetch(:env_prefix, "")
     end
 
     def read
@@ -22,13 +23,13 @@ module Unfig
 
     private
 
-    attr_reader :config, :values, :format, :banner
+    attr_reader :config, :values, :format, :banner, :env_prefix
 
     def argv = (@argv == UNSUPPLIED) ? ARGV : @argv
 
     def env = (@env == UNSUPPLIED) ? ENV.to_h : @env
 
-    def params = @_params ||= ParamsConfig.new(banner:, params: values)
+    def params = @_params ||= ParamsConfig.new(banner:, env_prefix:, params: values)
 
     def loaded_argv
       return @_loaded_argv if defined?(@_loaded_argv)
