@@ -13,8 +13,6 @@ module Unfig
   class ParamConfig
     KNOWN_ENABLED_VALUES = ["long", "short", "env", "file"].to_set.freeze
 
-    def self.load(params_data) = params_data.map { |key, value| new(key, value) }
-
     def initialize(name, data)
       @name = name
       @data = data.transform_keys(&:to_sym)
