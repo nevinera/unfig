@@ -2,13 +2,14 @@ RSpec.describe Unfig::ParamConfig do
   subject(:pc) { described_class.new(supplied_name, data) }
 
   let(:supplied_name) { "foo" }
-  let(:base_data) { {description:, type:, enabled:, default:, multi:, env:, long:, short:} }
+  let(:base_data) { {description:, type:, enabled:, default:, multi:, count:, env:, long:, short:} }
   let(:data) { base_data }
   let(:description) { "Foo is for foo" }
   let(:type) { "boolean" }
   let(:enabled) { ["long", "short", "file"] }
   let(:default) { true }
   let(:multi) { false }
+  let(:count) { false }
   let(:env) { "FOO_ENV" }
   let(:long) { "foo-foo" }
   let(:short) { "o" }
@@ -84,6 +85,53 @@ RSpec.describe Unfig::ParamConfig do
     context "when supplied as a string" do
       let(:env) { "FOO2" }
       it { is_expected.to eq("FOO2") }
+    end
+  end
+
+  describe "#multi?" do
+    subject { pc.multi? }
+
+    context "when not supplied" do
+      let(:data) { base_data.except(:multi) }
+      it { is_expected.to eq(false) }
+    end
+
+    context "when supplied as true" do
+      let(:default) { [] }
+      let(:multi) { true }
+      it { is_expected.to eq(true) }
+    end
+
+    context "when supplied as false" do
+      let(:multi) { false }
+      it { is_expected.to eq(false) }
+    end
+  end
+
+  describe "#count?" do
+    subject { pc.count? }
+
+    let(:type) { "integer" }
+    let(:default) { nil }
+
+    context "when not supplied" do
+      let(:data) { base_data.except(:count) }
+      it { is_expected.to eq(false) }
+    end
+
+    context "when supplied as true" do
+      let(:count) { true }
+      it { is_expected.to eq(true) }
+
+      context "on a non-integer param" do
+        let(:type) { "string" }
+        it { is_expected.to eq(false) }
+      end
+    end
+
+    context "when supplied as false" do
+      let(:count) { false }
+      it { is_expected.to eq(false) }
     end
   end
 end
