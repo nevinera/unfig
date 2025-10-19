@@ -3,10 +3,10 @@ RSpec.describe Unfig::ArgvLoader do
 
   let(:params) { instance_double(Unfig::ParamsConfig, banner: "My Banner", params: [foo, bar, baz, bam]) }
   let(:all) { ["short", "long", "env", "file"] }
-  let(:foo) { instance_double(Unfig::ParamConfig, name: "foo", enabled: all, multi?: false, type: "string", short: "f", long: "foo", description: "My Foo") }
-  let(:bar) { instance_double(Unfig::ParamConfig, name: "bar", enabled: all, multi?: false, type: "boolean", short: "b", long: "bar", description: "My Bar") }
-  let(:baz) { instance_double(Unfig::ParamConfig, name: "baz", enabled: all, multi?: true, type: "integer", short: "z", long: "baz", description: "My Baz") }
-  let(:bam) { instance_double(Unfig::ParamConfig, name: "bam", enabled: all, multi?: false, type: "float", short: "m", long: "bam", description: "My Bam") }
+  let(:foo) { instance_double(Unfig::ParamConfig, name: "foo", enabled: all, count?: false, multi?: false, type: "string", short: "f", long: "foo", description: "My Foo") }
+  let(:bar) { instance_double(Unfig::ParamConfig, name: "bar", enabled: all, count?: false, multi?: false, type: "boolean", short: "b", long: "bar", description: "My Bar") }
+  let(:baz) { instance_double(Unfig::ParamConfig, name: "baz", enabled: all, count?: false, multi?: true, type: "integer", short: "z", long: "baz", description: "My Baz") }
+  let(:bam) { instance_double(Unfig::ParamConfig, name: "bam", enabled: all, count?: false, multi?: false, type: "float", short: "m", long: "bam", description: "My Bam") }
 
   let(:argv) { [] }
 
@@ -112,6 +112,25 @@ RSpec.describe Unfig::ArgvLoader do
           expect { read }.to raise_error(OptionParser::MissingArgument, /--baz/)
         end
       end
+
+      context "with count: true" do
+        let(:baz) { instance_double(Unfig::ParamConfig, name: "baz", enabled: all, count?: true, type: "integer", short: "z", long: "baz", description: "My Baz") }
+
+        context "and it is not supplied" do
+          let(:argv) { [] }
+          it { is_expected.not_to include("baz") }
+        end
+
+        context "and it is supplied once" do
+          let(:argv) { ["--baz"] }
+          it { is_expected.to include("baz" => 1) }
+        end
+
+        context "and it is supplied several times" do
+          let(:argv) { ["-zz", "--baz", "-z"] }
+          it { is_expected.to include("baz" => 4) }
+        end
+      end
     end
 
     context "when a float is supplied" do
@@ -140,7 +159,7 @@ RSpec.describe Unfig::ArgvLoader do
     end
 
     context "when attempting to convert an unrecognized type" do
-      let(:foo) { instance_double(Unfig::ParamConfig, name: "foo", enabled: all, multi?: false, type: "hash", short: "f", long: "foo", description: "My Foo") }
+      let(:foo) { instance_double(Unfig::ParamConfig, name: "foo", enabled: all, count?: false, multi?: false, type: "hash", short: "f", long: "foo", description: "My Foo") }
       let(:argv) { ["--foo=hi"] }
 
       it "raises Invalid" do

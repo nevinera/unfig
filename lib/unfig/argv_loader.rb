@@ -37,7 +37,7 @@ module Unfig
     end
 
     def short_arg(p)
-      if p.type == "boolean"
+      if p.type == "boolean" || p.count?
         "-#{p.short}"
       else
         "-#{p.short}#{p.name.upcase}"
@@ -45,7 +45,9 @@ module Unfig
     end
 
     def long_arg(p)
-      if p.type == "boolean"
+      if p.count?
+        "--#{p.long}"
+      elsif p.type == "boolean"
         "--[no-]#{p.long}"
       else
         "--#{p.long}=#{p.name.upcase}"
@@ -73,7 +75,10 @@ module Unfig
 
     def add_option_for(opts, p)
       opts.on(*option_args(p)) do |value|
-        if p.multi?
+        if p.count?
+          @options[p.name] ||= 0
+          @options[p.name] += 1
+        elsif p.multi?
           @options[p.name] ||= []
           @options[p.name] << value
         elsif @options.key?(p.name)
